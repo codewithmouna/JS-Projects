@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Age Calculator</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f4f4f4;
+            transition: 0.3s;
+        }
+
+        .container {
+            width: 500px;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            transition: 0.3s;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .calculate {
+            background: #28a745;
+        }
+
+        .reset {
+            background: #dc3545;
+        }
+
+        .theme {
+            background: #007bff;
+        }
+
+        .result {
+            margin-top: 20px;
+            line-height: 1.8;
+        }
+
+        .highlight {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 25px;
+            background: #ddd;
+            border-radius: 20px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        #progressBar {
+            height: 100%;
+            width: 0%;
+            background: #28a745;
+            transition: 1s;
+        }
+
+        #birthdayAnimation {
+            text-align: center;
+            font-size: 30px;
+            margin-top: 15px;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        .dark {
+            background: #121212;
+            color: white;
+        }
+
+        .dark .container {
+            background: #222;
+            color: white;
+        }
+
+        .dark input {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Advanced Age Calculator</h1>
+
+        <div class="input-group">
+            <label>Date of Birth</label>
+            <input type="date" id="dob">
+        </div>
+
+        <div class="btn-group">
+            <button class="calculate" onclick="calculateAge()">
+                Calculate
+            </button>
+
+            <button class="reset" onclick="resetForm()">
+                Reset
+            </button>
+
+            <button class="theme" onclick="toggleTheme()">
+                Theme
+            </button>
+        </div>
+
+        <div class="progress-container">
+            <div id="progressBar"></div>
+        </div>
+
+        <div id="birthdayAnimation"></div>
+
+        <div class="result" id="result"></div>
+
+    </div>
+
+    <script>
+
+        const dobInput = document.getElementById("dob");
+
+        window.onload = function () {
+
+            const savedDOB =
+                localStorage.getItem("savedDOB");
+
+            if (savedDOB) {
+                dobInput.value = savedDOB;
+                calculateAge();
+            }
+        }
+
+        dobInput.addEventListener("change", function () {
+
+            localStorage.setItem(
+                "savedDOB",
+                dobInput.value
+            );
+        });
+
+        function toggleTheme() {
+
+            document.body.classList.toggle("dark");
+        }
+
+        function getWesternZodiac(day, month) {
+
+            const zodiac = [
+                ["Capricorn", 19],
+                ["Aquarius", 18],
+                ["Pisces", 20],
+                ["Aries", 19],
+                ["Taurus", 20],
+                ["Gemini", 20],
+                ["Cancer", 22],
+                ["Leo", 22],
+                ["Virgo", 22],
+                ["Libra", 22],
+                ["Scorpio", 21],
+                ["Sagittarius", 21],
+                ["Capricorn", 31]
+            ];
+
+            return day <= zodiac[month][1]
+                ? zodiac[month][0]
+                : zodiac[month + 1][0];
+        }
+
+        function getChineseZodiac(year) {
+
+            const animals = [
+                "Rat", "Ox", "Tiger", "Rabbit",
+                "Dragon", "Snake", "Horse", "Goat",
+                "Monkey", "Rooster", "Dog", "Pig"
+            ];
+
+            return animals[(year - 4) % 12];
+        }
+
+        function calculateAge() {
+
+            const dobValue = dobInput.value;
+
+            if (!dobValue) {
+                alert("Please select DOB");
+                return;
+            }
+
+            const dob = new Date(dobValue);
+            const today = new Date();
+
+            let years =
+                today.getFullYear() -
+                dob.getFullYear();
+
+            let months =
+                today.getMonth() -
+                dob.getMonth();
+
+            let days =
+                today.getDate() -
+                dob.getDate();
+
+            if (days < 0) {
+
+                months--;
+
+                const lastMonthDays =
+                    new Date(
+                        today.getFullYear(),
+                        today.getMonth(),
+                        0
+                    ).getDate();
+
+                days += lastMonthDays;
+            }
+
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+
+            const diff =
+                today - dob;
+
+            const totalDays =
+                Math.floor(
+                    diff / (1000 * 60 * 60 * 24)
+                );
+
+            const totalMonths =
+                years * 12 + months;
+
+            const totalHours =
+                Math.floor(
+                    diff / (1000 * 60 * 60)
+                );
+
+            const totalMinutes =
+                Math.floor(
+                    diff / (1000 * 60)
+                );
+
+            const totalSeconds =
+                Math.floor(
+                    diff / 1000
+                );
+
+            const western =
+                getWesternZodiac(
+                    dob.getDate(),
+                    dob.getMonth()
+                );
+
+            const chinese =
+                getChineseZodiac(
+                    dob.getFullYear()
+                );
+
+            let nextBirthday =
+                new Date(
+                    today.getFullYear(),
+                    dob.getMonth(),
+                    dob.getDate()
+                );
+
+            if (nextBirthday < today) {
+                nextBirthday.setFullYear(
+                    today.getFullYear() + 1
+                );
+            }
+
+            const birthdayDays =
+                Math.ceil(
+                    (nextBirthday - today) /
+                    (1000 * 60 * 60 * 24)
+                );
+
+            if (
+                today.getDate() === dob.getDate()
+                &&
+                today.getMonth() === dob.getMonth()
+            ) {
+                document.getElementById(
+                    "birthdayAnimation"
+                ).innerHTML =
+                    "🎂 HAPPY BIRTHDAY 🎉";
+            }
+            else {
+                document.getElementById(
+                    "birthdayAnimation"
+                ).innerHTML = "";
+            }
+
+            const progress =
+                Math.min(
+                    (years / 100) * 100,
+                    100
+                );
+
+            document.getElementById(
+                "progressBar"
+            ).style.width =
+                progress + "%";
+
+            document.getElementById(
+                "result"
+            ).innerHTML = `
+
+    <p>Age:
+    <span class="highlight">
+    ${years} Years,
+    ${months} Months,
+    ${days} Days
+    </span></p>
+
+    <p>Total Months:
+    <span class="highlight">
+    ${totalMonths}
+    </span></p>
+
+    <p>Total Days:
+    <span class="highlight">
+    ${totalDays}
+    </span></p>
+
+    <p>Total Hours:
+    <span class="highlight">
+    ${totalHours}
+    </span></p>
+
+    <p>Total Minutes:
+    <span class="highlight">
+    ${totalMinutes}
+    </span></p>
+
+    <p>Total Seconds:
+    <span class="highlight">
+    ${totalSeconds}
+    </span></p>
+
+    <p>Western Zodiac:
+    <span class="highlight">
+    ${western}
+    </span></p>
+
+    <p>Chinese Zodiac:
+    <span class="highlight">
+    ${chinese}
+    </span></p>
+
+    <p>Next Birthday In:
+    <span class="highlight">
+    ${birthdayDays} Days
+    </span></p>
+
+    <p>Life Progress (0-100 Years):
+    <span class="highlight">
+    ${progress.toFixed(1)}%
+    </span></p>
+    `;
+        }
+
+        function resetForm() {
+
+            dobInput.value = "";
+
+            localStorage.removeItem(
+                "savedDOB"
+            );
+
+            document.getElementById(
+                "result"
+            ).innerHTML = "";
+
+            document.getElementById(
+                "birthdayAnimation"
+            ).innerHTML = "";
+
+            document.getElementById(
+                "progressBar"
+            ).style.width = "0%";
+        }
+
+    </script>
+
+</body>
+
+</html>
