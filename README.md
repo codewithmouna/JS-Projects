@@ -68,6 +68,10 @@ An interactive tool to explore random color palettes.
 
 - **Key Features:** Generates random hex codes on click and applies them to the page background.
 
+<!-- Add your Color Changer screenshot/GIF here -->
+
+![Color Changer Preview](assets/previews/color-changer.gif)
+
 ### 7. Counter App (`CounterApp.html`)
 
 A fundamental project demonstrating basic state management.
@@ -75,6 +79,10 @@ A fundamental project demonstrating basic state management.
 - **Key Features:** Increment, decrement, and reset functionality with live UI updates.
 
 ## How to Use
+
+<!-- Add your Counter App screenshot/GIF here -->
+
+![Counter App Preview](assets/previews/counter-app.png)
 
 1. **Prerequisites:** To use the Movie Search App, ensure you have an active OMDb API key (configured in the script).
 2. **Running Locally:** Simply open any of the `.html` files in a modern web browser.
