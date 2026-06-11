@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Movie Search App</title>
+    <!-- <link rel="stylesheet" href="style.css"> -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial;
+        }
+
+        body {
+            background: #111;
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        #searchInput {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+        }
+
+        .watchlist-nav-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            background: #f5c518;
+            color: black;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #filterType {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            background: #333;
+            color: white;
+            cursor: pointer;
+        }
+
+        #movieContainer {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .movie-card {
+            background: #222;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .movie-card:hover {
+            transform: scale(1.03);
+        }
+
+        .movie-card img {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+        }
+
+        .movie-info {
+            padding: 15px;
+        }
+
+        .movie-info h3 {
+            margin-bottom: 10px;
+        }
+
+        .movie-info p {
+            margin-bottom: 5px;
+        }
+
+        .card-watchlist-btn {
+            width: 100%;
+            padding: 8px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .card-watchlist-btn.added {
+            background: #444;
+            color: #ccc;
+        }
+
+        .load-more-btn {
+            display: none;
+            margin: 30px auto;
+            padding: 12px 30px;
+            background: #e50914;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .load-more-btn:hover {
+            background: #b20710;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: #222;
+            margin: auto;
+            max-width: 800px;
+            border-radius: 15px;
+            position: relative;
+            padding: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+
+        .close-btn {
+            position: absolute;
+            right: 20px;
+            top: 10px;
+            font-size: 35px;
+            cursor: pointer;
+            color: #888;
+        }
+
+        .modal-left {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .modal-left img {
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        .modal-right {
+            flex: 2;
+            min-width: 300px;
+        }
+
+        .modal-right h2 {
+            margin-bottom: 15px;
+            color: #e50914;
+        }
+
+        .rating {
+            display: inline-block;
+            background: #f5c518;
+            color: black;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎬 Movie Search App</h1>
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search movies..." />
+            <select id="filterType">
+                <option value="">All</option>
+                <option value="movie">Movies</option>
+                <option value="series">Series</option>
+                <option value="episode">Episodes</option>
+            </select>
+            <button id="viewWatchlistBtn" class="watchlist-nav-btn">Watchlist</button>
+            <button id="exportWatchlistBtn" class="watchlist-nav-btn"
+                style="display: none; background: #28a745; color: white;">Export JSON</button>
+            <button id="importWatchlistBtn" class="watchlist-nav-btn"
+                style="display: none; background: #007bff; color: white;">Import JSON</button>
+            <input type="file" id="importInput" style="display: none;" accept=".json">
+        </div>
+        <div id="movieContainer"></div>
+        <button id="loadMoreBtn" class="load-more-btn">Load More</button>
+    </div>
+
+    <div id="movieModal" class="modal"></div>
+
+    <script>
+        const searchInput = document.getElementById("searchInput");
+        const movieContainer = document.getElementById("movieContainer");
+        const loadMoreBtn = document.getElementById("loadMoreBtn");
+        const viewWatchlistBtn = document.getElementById("viewWatchlistBtn");
+        const exportWatchlistBtn = document.getElementById("exportWatchlistBtn");
+        const importWatchlistBtn = document.getElementById("importWatchlistBtn");
+        const importInput = document.getElementById("importInput");
+
+        // Get your free API key at http://www.omdbapi.com/apikey.aspx
+        const API_KEY = "eb175782";
+
+        let debounceTimer;
+        let currentPage = 1;
+        let currentQuery = "";
+        let watchlist = JSON.parse(localStorage.getItem("movieWatchlist")) || [];
+        let showingWatchlist = false;
+        let fetchedMovies = []; // Cache to store current search results
+
+        // Event listener for search input with debouncing
+        searchInput.addEventListener("input", (e) => {
+            const query = e.target.value.trim();
+
+            clearTimeout(debounceTimer);
+
+            if (query === "") {
+                if (showingWatchlist) return;
+                currentQuery = "";
+                movieContainer.innerHTML = "";
+                loadMoreBtn.style.display = "none";
+                return;
+            }
+
+            debounceTimer = setTimeout(() => {
+                currentQuery = query;
+                currentPage = 1;
+                showingWatchlist = false;
+                viewWatchlistBtn.innerText = "Watchlist";
+                exportWatchlistBtn.style.display = "none";
+                importWatchlistBtn.style.display = "none";
+                fetchMovies(currentQuery, currentPage, filterType.value);
+            }, 500); // Wait 500ms after user stops typing
+        });
+
+        // Re-fetch when the filter changes
+        filterType.addEventListener("change", () => {
+            if (currentQuery !== "" && !showingWatchlist) {
+                currentPage = 1;
+                fetchMovies(currentQuery, currentPage, filterType.value);
+            }
+        });
+
+        // Handle movie card clicks using delegation
+        movieContainer.addEventListener("click", (e) => {
+            // Handle watchlist button click
+            if (e.target.classList.contains("card-watchlist-btn")) {
+                const id = e.target.dataset.id;
+                toggleWatchlist(id);
+                return;
+            }
+
+            // Handle card click (modal)
+            const card = e.target.closest(".movie-card");
+            if (card) {
+                const movieId = card.dataset.id;
+                showMovieDetails(movieId);
+            }
+        });
+
+        viewWatchlistBtn.addEventListener("click", () => {
+            showingWatchlist = !showingWatchlist;
+            if (showingWatchlist) {
+                viewWatchlistBtn.innerText = "Back to Search";
+                loadMoreBtn.style.display = "none";
+                exportWatchlistBtn.style.display = "block";
+                importWatchlistBtn.style.display = "block";
+                renderMovies(watchlist);
+            } else {
+                viewWatchlistBtn.innerText = "Watchlist";
+                exportWatchlistBtn.style.display = "none";
+                importWatchlistBtn.style.display = "none";
+                if (currentQuery) renderMovies(fetchedMovies);
+                else movieContainer.innerHTML = "";
+            }
+        });
+
+        importWatchlistBtn.addEventListener("click", () => importInput.click());
+
+        importInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+                    if (Array.isArray(importedData)) {
+                        // Avoid duplicates by checking existing imdbIDs
+                        const currentIds = new Set(watchlist.map(m => m.imdbID));
+                        const newMovies = importedData.filter(m => m.imdbID && !currentIds.has(m.imdbID));
+
+                        if (newMovies.length > 0) {
+                            watchlist = [...watchlist, ...newMovies];
+                            localStorage.setItem("movieWatchlist", JSON.stringify(watchlist));
+                            alert(`Successfully imported ${newMovies.length} movies!`);
+                            if (showingWatchlist) renderMovies(watchlist);
+                        } else {
+                            alert("All movies in this file are already in your watchlist.");
+                        }
+                    }
+                } catch (err) {
+                    alert("Error parsing the JSON file. Please make sure it's a valid export.");
+                }
+                importInput.value = ""; // Clear input for next use
+            };
+            reader.readAsText(file);
+        });
+
+        exportWatchlistBtn.addEventListener("click", () => {
+            if (watchlist.length === 0) {
+                alert("Your watchlist is empty!");
+                return;
+            }
+            // Create a data URI from the JSON string
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(watchlist, null, 4));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "movie_watchlist.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        });
+
+        loadMoreBtn.addEventListener("click", () => {
+            currentPage++;
+            fetchMovies(currentQuery, currentPage, filterType.value);
+        });
+
+        async function fetchMovies(query, page = 1, type = "") {
+            try {
+                // Add the type parameter to the API request
+                const url = `https://www.omdbapi.com/?s=${encodeURIComponent(query)}&page=${page}&type=${type}&apikey=${API_KEY}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.Response === "True") {
+                    if (page === 1) fetchedMovies = data.Search;
+                    else fetchedMovies = [...fetchedMovies, ...data.Search];
+
+                    renderMovies(data.Search, page > 1);
+
+                    // OMDb returns 10 results per page. Show button if more exist.
+                    const totalResults = parseInt(data.totalResults);
+                    if (totalResults > page * 10) {
+                        loadMoreBtn.style.display = "block";
+                    } else {
+                        loadMoreBtn.style.display = "none";
+                    }
+                } else {
+                    if (page === 1) {
+                        movieContainer.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; font-size: 1.2rem; margin-top: 20px; color: #888;">${data.Error}</p>`;
+                    }
+                    loadMoreBtn.style.display = "none";
+                }
+            } catch (error) {
+                movieContainer.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #ff4444;">Failed to fetch movies. Please check your internet connection.</p>`;
+                loadMoreBtn.style.display = "none";
+            }
+        }
+
+        async function showMovieDetails(id) {
+            try {
+                const url = `https://www.omdbapi.com/?i=${id}&plot=full&apikey=${API_KEY}`;
+                const response = await fetch(url);
+                const movie = await response.json();
+
+                if (movie.Response === "True") {
+                    const isInWatchlist = watchlist.some(m => m.imdbID === id);
+                    const modal = document.getElementById("movieModal");
+                    modal.innerHTML = `
+                        <div class="modal-content">
+                            <span class="close-btn" onclick="closeModal()">&times;</span>
+                            <div class="modal-left">
+                                <img src="${movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/300x450?text=No+Poster"}" alt="${movie.Title}">
+                            </div>
+                            <div class="modal-right">
+                                <h2>${movie.Title} (${movie.Year})</h2>
+                                <div class="rating">IMDb: ${movie.imdbRating}</div>
+                                <p><strong>Genre:</strong> ${movie.Genre}</p>
+                                <p><strong>Director:</strong> ${movie.Director}</p>
+                                <p><strong>Actors:</strong> ${movie.Actors}</p>
+                                <p><strong>Plot:</strong> ${movie.Plot}</p>
+                                <p><strong>Runtime:</strong> ${movie.Runtime}</p>
+                                <button class="card-watchlist-btn ${isInWatchlist ? 'added' : 'not-added'}" 
+                                        onclick="toggleWatchlist('${movie.imdbID}'); closeModal();" 
+                                        style="max-width: 200px; background: ${isInWatchlist ? '#444' : '#f5c518'}; color: ${isInWatchlist ? '#fff' : '#000'}">
+                                    ${isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    modal.style.display = "block";
+                    document.body.style.overflow = "hidden"; // Prevent background scroll
+                }
+            } catch (error) {
+                console.error("Error fetching movie details:", error);
+            }
+        }
+
+        function closeModal() {
+            const modal = document.getElementById("movieModal");
+            modal.style.display = "none";
+            document.body.style.overflow = "auto";
+        }
+
+        function toggleWatchlist(id) {
+            const index = watchlist.findIndex(m => m.imdbID === id);
+
+            if (index > -1) {
+                watchlist.splice(index, 1);
+            } else {
+                const movie = fetchedMovies.find(m => m.imdbID === id);
+                if (movie) watchlist.push(movie);
+            }
+
+            localStorage.setItem("movieWatchlist", JSON.stringify(watchlist));
+
+            // Refresh current view
+            if (showingWatchlist) {
+                renderMovies(watchlist);
+            } else {
+                renderMovies(fetchedMovies);
+            }
+        }
+
+        function renderMovies(movies, isAppend = false) {
+            const moviesHtml = movies.map(movie => {
+                const poster = movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/300x450?text=No+Poster";
+                const isInWatchlist = watchlist.some(m => m.imdbID === movie.imdbID);
+                return `
+                    <div class="movie-card" data-id="${movie.imdbID}">
+                        <img src="${poster}" alt="${movie.Title}" loading="lazy">
+                        <div class="movie-info">
+                            <h3>${movie.Title}</h3>
+                            <p>Year: ${movie.Year}</p>
+                            <p>Type: ${movie.Type.toUpperCase()}</p>
+                            <button class="card-watchlist-btn ${isInWatchlist ? 'added' : 'not-added'}" data-id="${movie.imdbID}">
+                                ${isInWatchlist ? 'Remove' : 'Add to Watchlist'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            if (isAppend) {
+                movieContainer.insertAdjacentHTML('beforeend', moviesHtml);
+            } else {
+                movieContainer.innerHTML = moviesHtml;
+            }
+        }
+    </script>
+</body>
+
+</html>
